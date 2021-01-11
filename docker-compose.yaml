@@ -1,0 +1,27 @@
+version: "3.1"
+
+networks:
+  app-network:
+    driver: bridge
+
+services:
+  mongodb:
+    image: mongo
+    restart: always
+    volumes:
+      - ./mongo/db:/data/db
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_DATABASE: admin
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    networks:
+      - app-network
+
+  mongoclient:
+    image: mongoclient/mongoclient
+    ports:
+      - 3001:3000
+    networks:
+      - app-network
