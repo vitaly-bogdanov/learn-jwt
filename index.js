@@ -3,6 +3,8 @@ const app = express();
 
 app.use(express.json({extended: true}));
 
+app.use(require('./router'));
+
 const mongoose = require('mongoose');
 
 async function start() {
