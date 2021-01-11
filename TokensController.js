@@ -8,7 +8,7 @@ const {
 const Token = require('./TokenModel');
 const bcrypt = require('bcryptjs');
 
-module.exports.TokensController = {
+module.exports = {
   getAccessRefresh: async (req, res) => {
     try {
       const { guid } = req.body;
@@ -28,13 +28,13 @@ module.exports.TokensController = {
       ); // вносим в базу данных
 
       if (!token) {
-        token = new Token({guid})
+        token = new Token({ guid })
       }
-      token.refreshToken = await bcrypt.hash(refreshToken, 64);
+      token.refreshToken = await bcrypt.hash(refreshToken, 1024);
       await user.save();
       res.status(200).json({ accessToken: `Bearer ${accessToken}`,  refreshToken, msg: "пара токенов СОЗДАНА"});
     } catch (e) {
-      res.status(500).json({ msg: "Server Error" })
+      res.status(500).json({ msg: "Server Error", err: e.message })
     }
   },
   refreshTokens: async (req, res) => {
@@ -44,6 +44,8 @@ module.exports.TokensController = {
       const decoded = jwt.verify(accessToken, jwt_access_secret);
       res.status(200).json({ msg: "access token варифицированн" })
     } catch (e) {
+
+      jwt.decode(accessToken, jwt_access_secret, )
       
       let token = await Token.findOne({ refreshToken });
 
@@ -58,9 +60,9 @@ module.exports.TokensController = {
           jwt_refresh_secret, 
           { algorithm: jwt_refresh_algorithm }
         );
-        token.refreshToken = await bcrypt.hash(refreshToken, 64);
+        token.refreshToken = await bcrypt.hash(refreshToken, 1024);
         token.save();
-        res.status(323).json({ accessToken: `Bearer ${accessToken}`,  refreshToken, msg: "был задействован refresh token для получения новой пары токенов"})
+        res.status(200).json({ accessToken: `Bearer ${accessToken}`,  refreshToken, msg: "был задействован refresh token для получения новой пары токенов"})
       } else {
         res.status(500).json({ msg: "требуется повторная авторизация" })
       }
