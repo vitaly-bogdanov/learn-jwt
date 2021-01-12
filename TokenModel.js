@@ -3,7 +3,7 @@ const { request } = require("express");
 const {Schema, model} = require('mongoose');
 
 const schema = new Schema({
-  guid: {type: String, required: true, unique: true},
+  guid: {type: String, required: true},
   refresh_token: {type: String, required: true}
 });
 

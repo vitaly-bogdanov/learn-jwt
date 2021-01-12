@@ -5,8 +5,8 @@ module.exports = {
   db_name: 'admin',
   db_password: 'example',
   db_username: 'root',
-  jwt_access_secret: 'test 1234 lol',
-  jwt_refresh_secret: 'lolololollo 67',
-  jwt_access_algorithm: 'RS256',
-  jwt_refresh_algorithm: 'RS256'
+  jwt_access_secret: 'test1234loxxxcxxcxxl',
+  jwt_refresh_secret: 'lolololollocccxcc67',
+  jwt_access_algorithm: 'HS256',
+  jwt_refresh_algorithm: 'HS256'
 }

@@ -11,9 +11,9 @@ const bcrypt = require('bcryptjs');
 module.exports = {
   getAccessRefresh: async (req, res) => {
     try {
-      const { guid } = req.body;
+      const { guid } = req.query;
 
-      let token = await Token.findOne({ guid });
+      let token = new Token({ guid });
 
       const accessToken = jwt.sign(
         { guid }, 
@@ -25,46 +25,47 @@ module.exports = {
         { guid },
         jwt_refresh_secret, 
         { algorithm: jwt_refresh_algorithm }
-      ); // вносим в базу данных
+      ); 
 
-      if (!token) {
-        token = new Token({ guid })
-      }
-      token.refreshToken = await bcrypt.hash(refreshToken, 1024);
-      await user.save();
-      res.status(200).json({ accessToken: `Bearer ${accessToken}`,  refreshToken, msg: "пара токенов СОЗДАНА"});
+      token.refresh_token = await bcrypt.hash(refreshToken, 12);
+      
+      await token.save();
+      res.status(201).json({ accessToken: `Bearer ${accessToken}`,  refreshToken, msg: "пара токенов СОЗДАНА"});
     } catch (e) {
-      res.status(500).json({ msg: "Server Error", err: e.message })
+      res.status(500).json({ msg: "Server Error", err: e.message });
     }
   },
   refreshTokens: async (req, res) => {
-    const { accessToken, refreshToken } = req.body;
+    const { accessToken, refreshToken, guid } = req.query;
 
     try {
       const decoded = jwt.verify(accessToken, jwt_access_secret);
-      res.status(200).json({ msg: "access token варифицированн" })
+      res.status(200).json({ msg: "access token варифицирован" })
     } catch (e) {
 
-      jwt.decode(accessToken, jwt_access_secret, )
-      
-      let token = await Token.findOne({ refreshToken });
-
+      let token = await Token.findOne({ guid });
       if (token) {
-        const accessToken = jwt.sign(
-          { guid: token.guid }, 
-          jwt_access_secret,
-          { expiresIn: '2m', algorithm: jwt_access_algorithm }
-        );
-        const newRefreshToken = jwt.sign(
-          { guid: token.guid },
-          jwt_refresh_secret, 
-          { algorithm: jwt_refresh_algorithm }
-        );
-        token.refreshToken = await bcrypt.hash(refreshToken, 1024);
-        token.save();
-        res.status(200).json({ accessToken: `Bearer ${accessToken}`,  refreshToken, msg: "был задействован refresh token для получения новой пары токенов"})
+        let bcriptRefreshToken = token.refresh_token;
+
+        if (await bcrypt.compare(refreshToken, bcriptRefreshToken)) {
+          const accessToken = jwt.sign(
+            { guid }, 
+            jwt_access_secret,
+            { expiresIn: '2m', algorithm: jwt_access_algorithm }
+          );
+          const refreshToken = jwt.sign(
+            { guid },
+            jwt_refresh_secret, 
+            { algorithm: jwt_refresh_algorithm }
+          );
+          token.refresh_token = await bcrypt.hash(refreshToken, 12);
+          await token.save();
+          res.status(200).json({ accessToken: `Bearer ${accessToken}`,  refreshToken, msg: "был задействован refresh token для получения новой пары токенов"})
+        } else {
+          res.status(401).json({ msg: "требуется пересоздание токенов" })
+        }
       } else {
-        res.status(500).json({ msg: "требуется повторная авторизация" })
+        res.status(401).json({ msg: "guid не найден" })
       }
     }
   }
